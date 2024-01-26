@@ -3,10 +3,13 @@
 #include "display.hpp"
 
 #include <assert.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include <codecvt>
 #include <cstring>
 #include <iostream>
+#include <locale>
 #include <string>
 
 #include "maths.hpp"
@@ -15,6 +18,22 @@
 
 
 using namespace ts;
+
+
+static Rcode write_all(int fd, const char* s, u32 sz, std::ostream& los) {
+
+	while (sz > 0) {
+		ssize_t nb = write(fd, s, sz);
+		if (nb < 0) {
+			APPEND_ERROR(los, "'write' failed with %s", strerror(errno));
+			return R(IoError);
+		}
+		s += nb;
+		sz -= nb;
+	}
+
+	return R(Ok);
+}
 
 
 Display::Display() noexcept
@@ -128,70 +147,103 @@ static u32 fill_color(char32_t* buffer, u32 pos, const char32_t* layer, const v4
 }
 
 
-Rcode Display::output(std::ostream& ostr) noexcept {
+Rcode Display::output(FILE* f, std::ostream& los) noexcept {
 
 	if (!valid()) return R(Uninit);
 
 	Stopwatch<float> sw;
 	sw.reset();
+	{
+		std::scoped_lock<decltype(_ixreadyM)> sl(_ixreadyM);
 
-	std::scoped_lock<decltype(_ixreadyM)> sl(_ixreadyM);
+		color_buffer_f& b = _bufs[_ixready];
+		u32 maxY = b.h * b.stride;
+		u32 i = 0;
 
-	color_buffer_f& b = _bufs[_ixready];
-	u32 maxY = b.h * b.stride;
-	u32 i = 0;
-	_chars[i++] = U'\033';
-	_chars[i++] = U'[';
-	_chars[i++] = U'2';
-	_chars[i++] = U'J';
-	std::memcpy(_chars+i, U"\033[1;0f", 6*sizeof(char32_t));
-	i += 6;
-	v3f lastFg, lastBg;
-	for (u32 y = 0; y < maxY; y += b.stride) {
-		assert(i < _szchars);
-		u32 maxX = y+b.w;
-		for (u32 x = y; x < maxX; ++x) {
-			cell_t& c = b.data[x];
-			if (i != 0) {
-				if (lastFg != c.fg.xyz) {
+		static const char32_t cReturnToStart[] = U"\033[1;0f";
+		static_assert(sizeof(cReturnToStart) == 7*sizeof(char32_t));
+
+		std::memcpy(_chars+i, cReturnToStart, sizeof(cReturnToStart)-sizeof(*cReturnToStart));
+		i += 6;
+		v3f lastFg, lastBg;
+		for (u32 y = 0; y < maxY; y += b.stride) {
+			assert(i < _szchars);
+			u32 maxX = y+b.w;
+			for (u32 x = y; x < maxX; ++x) {
+				cell_t& c = b.data[x];
+				if (i != 0) {
+					if (lastFg != c.fg.xyz) {
+						i = fill_color(_chars, i, U"38", c.fg);
+						lastFg = c.fg.xyz;
+					}
+					if (lastBg != c.bg.xyz) {
+						i = fill_color(_chars, i, U"48", c.bg);
+						lastBg = c.bg.xyz;
+					}
+				} else {
 					i = fill_color(_chars, i, U"38", c.fg);
-					lastFg = c.fg.xyz;
-				}
-				if (lastBg != c.bg.xyz) {
 					i = fill_color(_chars, i, U"48", c.bg);
+					lastFg = c.fg.xyz;
 					lastBg = c.bg.xyz;
 				}
-			} else {
-				i = fill_color(_chars, i, U"38", c.fg);
-				i = fill_color(_chars, i, U"48", c.bg);
-				lastFg = c.fg.xyz;
-				lastBg = c.bg.xyz;
+				_chars[i++] = static_cast<char32_t>(c.c);
 			}
-			_chars[i++] = static_cast<char32_t>(c.c);
+			_chars[i++] = U'\n';
 		}
-		_chars[i++] = U'\n';
+		_chars[i++] = U'\033';
+		_chars[i++] = U'[';
+		_chars[i++] = U'0';
+		_chars[i++] = U'm';
+		_chars[i++] = U'\0';
 	}
-	_chars[i++] = U'\033';
-	_chars[i++] = U'[';
-	_chars[i++] = U'0';
-	_chars[i++] = U'm';
-	_chars[i++] = U'\0';
-
 	std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
 	std::string bs = conv.to_bytes(_chars);
 
-	float t1 = sw.measure();
+	if (0 != tcdrain(fileno(f))) {
+		APPEND_ERROR(los, "TCDRAIN failed with %s", strerror(errno));
+		return R(IoError);
+	}
 
-	sw.reset();
-	//ostr.flush();
-	ostr.write(bs.c_str(), bs.size());
-	ostr.flush();
-	float t2 = sw.measure();
+	if (0 != fflush(f)) {
+		APPEND_ERROR(los, "FFLUSH failed!");
+		return R(IoError);
+	}
 
-	//ostr << "T1: " << t1 << "; T2: " << t2 << std::endl;
+	u32 sz = bs.size();
+	char* ob = (char*)bs.data();
+
+	FWDR(write_all, fileno(f), ob, sz, los);
+
+	if (0 != tcdrain(fileno(f))) {
+		APPEND_ERROR(los, "TCDRAIN failed with %s", strerror(errno));
+		return R(IoError);
+	}
+
+	if (0 != fflush(f)) {
+		APPEND_ERROR(los, "FFLUSH failed!");
+		return R(LogicError);
+	}
 
 	return R(Ok);
 }
+
+
+
+
+Rcode Display::clear(FILE* f, std::ostream& los) noexcept {
+
+	if (!valid()) return R(Uninit);
+
+	static const char cClear[] = "\033[2J";
+	FWDR(write_all, fileno(f), cClear, lengthof(cClear), los);
+	if (0 != fflush(f)) {
+		APPEND_ERROR(los, "'fflush' failed!");
+		return R(IoError);
+	}
+
+	return R(Ok);
+}
+
 
 #define TERMSHADER_DISPLAY_CPP_
 #endif

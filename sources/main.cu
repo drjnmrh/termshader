@@ -96,9 +96,28 @@ static bool keypressed() {
 }
 
 
-static f32 select_fps(f32 time, f32 mean, f32 freq, f32 amp, f32 rnd) {
-	return mean + amp*std::sin((time*freq + rnd*((std::rand()%10000)/10000.0f - 0.5f))*2.f*M_PI);
-}
+template <u32 S, typename T>
+class MeasureSmoother {
+public:
+	explicit MeasureSmoother(T def) : _ix(0) { 
+   		for (u32 i = 0; i < S; ++i) _ring[i] = def;
+	}
+
+	void addMeasurement(T v) noexcept {
+		_ring[_ix] = v;
+		_ix = (_ix + 1)%S;
+	}
+
+	T mean() const noexcept {
+		T m = 0;
+		for (u32 i = 0; i < S; ++i) m += _ring[i];
+		return m / S;
+	}
+
+private:
+	T _ring[S];
+	u32 _ix;
+};
 
 
 int main(int argc, char** argv) {
@@ -129,25 +148,21 @@ int main(int argc, char** argv) {
 	Stopwatch<float> sw, sw2;
 	sw.reset(); sw2.reset();
 
-	static constexpr f32 cFPS = 30.0f;
+	static constexpr f32 cFPS = 60.f;
+	static constexpr f32 cFrameTime = 1.0f/cFPS;
 
-	float ring[16];
-	for(u32 i = 0; i < lengthof(ring); ++i) ring[i] = 1.0f/cFPS;
-	u32 ixring=0;
-	f32 fps = cFPS;
+	MeasureSmoother<16, f32> meanT(cFrameTime);
 
+	FWDI(display.clear, stdout, los);
 	while(!key.load(std::memory_order_acquire) && !FAILED(renderRc)) {
 		float T = sw.measure();
-		if (T > 1.0f/fps) {
-			fps = select_fps(sw2.measure(), cFPS, 0.2f, 0.05f, 1.5f);
+		if (T > cFrameTime) {
+			FWDI(display.output, stdout, los);
+			
 			sw.reset();
-			display.output(std::cout);
-			ring[ixring] = T;
-			ixring = (ixring+1)%lengthof(ring);
-			f32 meanT = 0.0f;
-			for (u32 i = 0; i < lengthof(ring); ++i) meanT += ring[i];
-			meanT /= lengthof(ring);
-			std::cout << los.str() << "FPS: " << 1.0f/meanT << std::endl;
+			meanT.addMeasurement(T);
+					
+			std::cout << los.str() << "FPS: " << 1.0f/meanT.mean() << std::endl;
 			std::cout.flush();
 		}
 		std::this_thread::yield();
@@ -160,6 +175,8 @@ int main(int argc, char** argv) {
 
 	fputs("\e[?25h", stdout);
 	tcsetattr(fileno(stdin), TCSANOW, &olds);
+	
+	tcflush(fileno(stdin), TCIOFLUSH);
 
 	return 0;
 }

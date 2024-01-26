@@ -1,7 +1,6 @@
 #ifndef TERMSHADER_CUDA_HPP_
 
 
-#include <cstdio>
 #include <iostream>
 
 #include "global.hpp"
@@ -15,22 +14,6 @@ do {\
 		return R(CudaError);\
 	}\
 }while(0)
-
-
-#define APPEND_INFO(Los, Msg, ...) \
-	do {\
-		char buffer[256];\
-		std::snprintf(buffer, ts::lengthof(buffer), Msg, ##__VA_ARGS__);\
-		(Los) << "\033[34mINFO  \033[0m: " << buffer << std::endl;\
-	}while(0)
-
-#define APPEND_ERROR(Los, Msg, ...) \
-	do {\
-		char buffer[256];\
-		std::snprintf(buffer, ts::lengthof(buffer), Msg, ##__VA_ARGS__);\
-		(Los) << "\033[31mFAILED\033[0m: " << buffer << std::endl;\
-	}while(0);
-
 
 
 namespace ts {;

@@ -45,7 +45,8 @@ public:
 
 	Rcode flip() noexcept;
 
-	Rcode output(std::ostream& o) noexcept;
+	Rcode output(FILE* f, std::ostream& los) noexcept;
+	Rcode clear(FILE* f, std::ostream& los) noexcept;
 
 private:
 	color_buffer_f _bufs[2];
