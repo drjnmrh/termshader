@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ -f "valgrind.txt" ]]; then
+	rm valgrind.txt
+fi
+
+sups=""
+if [[ -f "suppressions.txt" ]]; then
+	echo Using suppressions
+	sups="--suppressions=suppressions.txt"
+fi
+
+valgrind $sups --log-file=valgrind.txt --track-origins=yes --leak-check=full --show-leak-kinds=all build/$1 

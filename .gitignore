@@ -1,0 +1,5 @@
+.git
+build
+errors.txt
+valgrind.txt
+*.swp

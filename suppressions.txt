@@ -1,0 +1,30 @@
+{
+  cudaGetDeviceCount/calloc
+  Memcheck:Leak
+  fun:calloc
+  ...
+  fun:cudaGetDeviceCount
+  ...
+}
+{
+  cudaGetDeviceCount/malloc
+  Memcheck:Leak
+  fun:malloc
+  ...
+  fun:cudaGetDeviceCount
+  ...
+}
+{
+  cudart/calloc
+  Memcheck:Leak
+  fun:calloc
+  ...
+  fun:__cudart*
+}
+{
+  cudart/malloc
+  Memcheck:Leak
+  fun:malloc
+  ...
+  fun:__cudart*
+}
