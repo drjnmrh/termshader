@@ -1,3 +1,27 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2024 Stoned Fox
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef TERMSHADER_DISPLAY_CPP_
 
 #include "display.hpp"
@@ -18,6 +42,9 @@
 
 
 using namespace ts;
+
+
+static const char cClearU8[] = "\033[2J";
 
 
 static Rcode write_all(int fd, const char* s, u32 sz, std::ostream& los) {
@@ -69,8 +96,8 @@ Rcode Display::setUp(u32 width, u32 height) noexcept {
 	std::memset(_bufs[1].data, 0, sizeof(cell_t)*width*height);
 
 	const std::u32string cX = U"\033[38;2;255;255;255m\033[48;2;255;255;255m\033[0m";
-	const std::u32string cClear = U"\033[2J\033[0;0H";
-	_szchars = ((width+16)*height+1)*cX.size()+cClear.size();
+
+	_szchars = ((width+16)*height+1)*cX.size()+lengthof(cClearU8);
     _chars = new char32_t[_szchars];
 	std::memset(_chars, 0, sizeof(char32_t)*_szchars);
 
@@ -234,8 +261,7 @@ Rcode Display::clear(FILE* f, std::ostream& los) noexcept {
 
 	if (!valid()) return R(Uninit);
 
-	static const char cClear[] = "\033[2J";
-	FWDR(write_all, fileno(f), cClear, lengthof(cClear), los);
+	FWDR(write_all, fileno(f), cClearU8, lengthof(cClearU8), los);
 	if (0 != fflush(f)) {
 		APPEND_ERROR(los, "'fflush' failed!");
 		return R(IoError);
