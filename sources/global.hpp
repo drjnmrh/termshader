@@ -5,6 +5,8 @@
 #include <stdint.h>
 
 #include <chrono>
+#include <cstdio>
+#include <iostream>
 
 
 namespace ts {;
@@ -20,6 +22,7 @@ enum class Rcode {
 ,	LogicError   = 6
 ,	Already      = 7
 ,	Uninit       = 8
+,	IoError      = 9
 ,	Unknown
 };
 #define R(Rc) ts::Rcode:: Rc
@@ -43,6 +46,25 @@ enum class Rcode {
 	}while(0)
 
 
+template < typename T, size_t N >
+static constexpr size_t lengthof(T (&a)[N]) { return N; }
+
+
+#define APPEND_INFO(Los, Msg, ...) \
+	do {\
+		char buffer[256];\
+		std::snprintf(buffer, ts::lengthof(buffer), Msg, ##__VA_ARGS__);\
+		(Los) << "\033[34mINFO  \033[0m: " << buffer << std::endl;\
+	}while(0)
+
+#define APPEND_ERROR(Los, Msg, ...) \
+	do {\
+		char buffer[256];\
+		std::snprintf(buffer, ts::lengthof(buffer), Msg, ##__VA_ARGS__);\
+		(Los) << "\033[31mFAILED\033[0m: " << buffer << std::endl;\
+	}while(0);
+
+
 using byte = uint8_t;
 using u16  = uint16_t;
 using i16  = int16_t;
@@ -52,10 +74,6 @@ using u64  = uint64_t;
 using i64  = int64_t;
 using f32  = float;
 using f64  = double;
-
-
-template < typename T, size_t N >
-static constexpr size_t lengthof(T (&a)[N]) { return N; }
 
 
 template < typename T >
