@@ -8,7 +8,7 @@ https://github.com/drjnmrh/termshader/assets/18217667/7875be98-1b83-4866-b337-7a
 
 ## How does it work?
 
-I've kept it simple: fire is drawn using stdout and colored space symbol. Used shader made by Ian McEwan, Ashima Arts (https://www.shadertoy.com/view/MlKSWm).</br>
+I've kept it simple: fire is drawn using stdout and colored space symbol. I've used shader made by Ian McEwan, Ashima Arts (https://www.shadertoy.com/view/MlKSWm).</br>
 
 Shader was rewritten in C++ using CUDA.
 
