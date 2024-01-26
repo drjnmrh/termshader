@@ -14,4 +14,4 @@ Shader was rewritten in C++ using CUDA.
 
 # Prerequisites
 
-Currently I've supported only Linux platform (tested on Ubuntu 22.04.3 LTS). Also it is required to have a terminal which supports 24 bit color.
+Currently I've supported only Linux platform (tested on Ubuntu 22.04.3 LTS). Also it is required to launch in a terminal with 24 bit color support.
