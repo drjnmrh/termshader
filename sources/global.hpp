@@ -36,37 +36,37 @@ namespace ts {;
 
 
 enum class Rcode {
-	Ok           = 0
-,	CudaError    = 1
-,	CudaSetup    = 2
-,	Timeout      = 3
-,	MemError     = 4
-,	InvalidInput = 5
-,	LogicError   = 6
-,	Already      = 7
-,	Uninit       = 8
-,	IoError      = 9
-,	Unknown
+    Ok           = 0
+,   CudaError    = 1
+,   CudaSetup    = 2
+,   Timeout      = 3
+,   MemError     = 4
+,   InvalidInput = 5
+,   LogicError   = 6
+,   Already      = 7
+,   Uninit       = 8
+,   IoError      = 9
+,   Unknown
 };
 #define R(Rc) ts::Rcode:: Rc
 #define R2I(Rc) static_cast<int>(ts::Rcode:: Rc);
 #define FAILED(Rc) ((Rc) != R(Ok))
 
 #define FWDI(Func, ...) \
-	do {\
-		ts::Rcode rc = Func(__VA_ARGS__);\
-		if (FAILED(rc)) {\
-			return static_cast<int>(rc);\
-		}\
-	}while(0)
+    do {\
+        ts::Rcode rc = Func(__VA_ARGS__);\
+        if (FAILED(rc)) {\
+            return static_cast<int>(rc);\
+        }\
+    }while(0)
 
 #define FWDR(Func, ...) \
-	do {\
-		ts::Rcode rc = Func(__VA_ARGS__);\
-		if (FAILED(rc)) {\
-			return rc;\
-		}\
-	}while(0)
+    do {\
+        ts::Rcode rc = Func(__VA_ARGS__);\
+        if (FAILED(rc)) {\
+            return rc;\
+        }\
+    }while(0)
 
 
 template < typename T, size_t N >
@@ -74,18 +74,18 @@ static constexpr size_t lengthof(T (&a)[N]) { return N; }
 
 
 #define APPEND_INFO(Los, Msg, ...) \
-	do {\
-		char buffer[256];\
-		std::snprintf(buffer, ts::lengthof(buffer), Msg, ##__VA_ARGS__);\
-		(Los) << "\033[34mINFO  \033[0m: " << buffer << std::endl;\
-	}while(0)
+    do {\
+        char buffer[256];\
+        std::snprintf(buffer, ts::lengthof(buffer), Msg, ##__VA_ARGS__);\
+        (Los) << "\033[34mINFO  \033[0m: " << buffer << std::endl;\
+    }while(0)
 
 #define APPEND_ERROR(Los, Msg, ...) \
-	do {\
-		char buffer[256];\
-		std::snprintf(buffer, ts::lengthof(buffer), Msg, ##__VA_ARGS__);\
-		(Los) << "\033[31mFAILED\033[0m: " << buffer << std::endl;\
-	}while(0);
+    do {\
+        char buffer[256];\
+        std::snprintf(buffer, ts::lengthof(buffer), Msg, ##__VA_ARGS__);\
+        (Los) << "\033[31mFAILED\033[0m: " << buffer << std::endl;\
+    }while(0);
 
 
 using byte = uint8_t;
@@ -101,21 +101,21 @@ using f64  = double;
 
 template < typename T >
 class Stopwatch {
-	using defclock = std::chrono::high_resolution_clock;
+    using defclock = std::chrono::high_resolution_clock;
 public:
-	void reset() noexcept {
+    void reset() noexcept {
 
-		_tps = defclock::now();
-	}
+        _tps = defclock::now();
+    }
 
-	T measure() noexcept {
+    T measure() noexcept {
 
-		defclock::time_point tpn = defclock::now();
-		std::chrono::duration<T> d = tpn - _tps;
-		return d.count();
-	}
+        defclock::time_point tpn = defclock::now();
+        std::chrono::duration<T> d = tpn - _tps;
+        return d.count();
+    }
 private:
-	defclock::time_point _tps;
+    defclock::time_point _tps;
 };
 
 
