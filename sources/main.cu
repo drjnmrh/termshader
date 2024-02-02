@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
             sw.reset();
             meanT.addMeasurement(T);
                     
-            std::cout << los.str() << "FPS: " << 1.0f/T << std::endl;
+            std::cout << los.str() << "FPS: " << 1.0f/meanT.mean() << std::endl;
             std::cout.flush();
         }
         std::this_thread::yield();
