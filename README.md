@@ -4,7 +4,9 @@ Shading terminal symbols using CUDA and Unicode. Just for lulz.
 
 ## Demo
 
-https://github.com/drjnmrh/termshader/assets/18217667/7875be98-1b83-4866-b337-7ad926401877
+
+https://github.com/drjnmrh/termshader/assets/18217667/fa44e60b-ea79-4747-a18d-6c72429dfbed
+
 
 ## How does it work?
 
