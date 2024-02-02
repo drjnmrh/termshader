@@ -226,25 +226,10 @@ Rcode Display::output(FILE* f, std::ostream& los) noexcept {
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
     std::string bs = conv.to_bytes(_chars);
 
-    if (0 != tcdrain(fileno(f))) {
-        APPEND_ERROR(los, "TCDRAIN failed with %s", strerror(errno));
-        return R(IoError);
-    }
-
-    if (0 != fflush(f)) {
-        APPEND_ERROR(los, "FFLUSH failed!");
-        return R(IoError);
-    }
-
     u32 sz = bs.size();
     char* ob = (char*)bs.data();
 
     FWDR(write_all, fileno(f), ob, sz, los);
-
-    if (0 != tcdrain(fileno(f))) {
-        APPEND_ERROR(los, "TCDRAIN failed with %s", strerror(errno));
-        return R(IoError);
-    }
 
     if (0 != fflush(f)) {
         APPEND_ERROR(los, "FFLUSH failed!");

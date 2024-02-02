@@ -56,8 +56,10 @@ __global__ static void do_shading(color_buffer_f buf, float T) {
     if (r >= buf.h || c >= buf.w) return;
 
     cell_t* pcell = &buf.data[r*buf.stride + c];
-    shade_fire(pcell->bg, vec2_d(c, buf.h-r-1), T, vec2_d(buf.w, buf.h));
-    pcell->c = (u32)U' ';
+    f32 y = buf.h-r-1;
+    shade_fire(pcell->bg, vec2_d(c, 2*y), T, vec2_d(buf.w, buf.h));
+    shade_fire(pcell->fg, vec2_d(c, 2*y+1), T, vec2_d(buf.w, buf.h));
+    pcell->c = (u32)U'▀';
 }
 
 
@@ -71,7 +73,7 @@ static Rcode run_shaders(Display& display, std::ostream& los, std::atomic<bool>&
     CALL_CUDA(cudaMalloc, &buf.data, szbuf);
     cuda_array_raii_t<cell_t> gpuBufDataRaii(buf.data);
 
-    static constexpr i32 cBlockSize = 16;
+    static constexpr i32 cBlockSize = 32;
 
     vec<2, i32> nbblocks = ceil(vec2((f32)buf.w, (f32)buf.h)/cBlockSize);
 
@@ -167,7 +169,7 @@ int main(int argc, char** argv) {
     Stopwatch<float> sw, sw2;
     sw.reset(); sw2.reset();
 
-    static constexpr f32 cFPS = 60.f;
+    static constexpr f32 cFPS = 30.f;
     static constexpr f32 cFrameTime = 1.0f/cFPS;
 
     MeasureSmoother<16, f32> meanT(cFrameTime);
@@ -181,7 +183,7 @@ int main(int argc, char** argv) {
             sw.reset();
             meanT.addMeasurement(T);
                     
-            std::cout << los.str() << "FPS: " << 1.0f/meanT.mean() << std::endl;
+            std::cout << los.str() << "FPS: " << 1.0f/T << std::endl;
             std::cout.flush();
         }
         std::this_thread::yield();
