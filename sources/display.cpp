@@ -223,18 +223,28 @@ Rcode Display::output(FILE* f, std::ostream& los) noexcept {
         _chars[i++] = U'm';
         _chars[i++] = U'\0';
     }
+    f32 elapsed1 = sw.measure();
+    sw.reset();
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
     std::string bs = conv.to_bytes(_chars);
+    f32 elapsed2 = sw.measure();
+    sw.reset();
 
     u32 sz = bs.size();
     char* ob = (char*)bs.data();
 
+    fflush(f);
+
     FWDR(write_all, fileno(f), ob, sz, los);
+    f32 elapsed3 = sw.measure();
 
     if (0 != fflush(f)) {
         APPEND_ERROR(los, "FFLUSH failed!");
         return R(LogicError);
     }
+    tcdrain(fileno(f));
+
+    std::cout << "SZ: " << sz << "; T1: " << elapsed1*1000.0f << "; T2: " << elapsed2*1000.0f << "; T3: " << elapsed3*1000.0f << std::endl;
 
     return R(Ok);
 }

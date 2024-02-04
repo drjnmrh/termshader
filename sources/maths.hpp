@@ -190,6 +190,14 @@ template <u32 D> static vec<D, f32> operator / (const vec<D, f32>& a, i32 s) noe
 }
 
 
+static u32 clamp(u32 s, u32 m, u32 M) noexcept {
+
+    if (s < m) return m;
+    if (s > M) return M;
+    return s;
+}
+
+
 }
 
 

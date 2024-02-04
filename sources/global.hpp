@@ -72,6 +72,8 @@ enum class Rcode {
 template < typename T, size_t N >
 static constexpr size_t lengthof(T (&a)[N]) { return N; }
 
+#define KB(Nb) (1024*(Nb))
+#define MB(Nb) (1024*KB(Nb))
 
 #define APPEND_INFO(Los, Msg, ...) \
     do {\
